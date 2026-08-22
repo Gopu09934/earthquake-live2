@@ -1,0 +1,9 @@
+{
+  "name": "eq-watch-stream",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Renders the EQ Watch dashboard in a real Chromium window on a virtual display so ffmpeg can capture it and push to YouTube.",
+  "dependencies": {
+    "puppeteer": "^23.11.1"
+  }
+}

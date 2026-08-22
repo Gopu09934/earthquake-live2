@@ -1,0 +1,10 @@
+# Local env file with real secrets — never commit this
+.env
+
+# OS/editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+
+# Node deps (installed fresh in the Docker build; not needed in the repo)
+node_modules/

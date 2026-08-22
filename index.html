@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>EQ WATCH — Live Global Seismic Monitor</title>
+<meta name="description" content="Real-time global earthquake monitoring dashboard powered by USGS." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2240%22 fill=%22%23090b10%22/><circle cx=%2250%22 cy=%2250%22 r=%2214%22 fill=%22%23ffb238%22/></svg>" />
+<link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+<div class="app">
+
+  <!-- ===================== HEADER ===================== -->
+  <header class="hdr">
+    <div class="hdr-brand">
+      <span class="mark">EQ<span>·</span>WATCH</span>
+      <span class="tag">Global Seismic Monitor</span>
+    </div>
+    <div class="hdr-status">
+      <span class="status-pill is-cached" id="statusPill">
+        <span class="status-dot"></span>
+        <span id="statusText">Connecting…</span>
+      </span>
+      <span class="hdr-clock"><span id="clockUtc">--:--:--</span><small>UTC</small></span>
+    </div>
+  </header>
+
+  <!-- ===================== ALERT BAR ===================== -->
+  <div class="alert-bar" id="alertBar" style="display:none">
+    <span class="alert-icon">⚠</span>
+    <span id="alertText"></span>
+  </div>
+
+  <!-- ===================== MAIN SPLIT ===================== -->
+  <div class="main">
+
+    <!-- ---------- MAP ---------- -->
+    <section class="map-panel" id="mapPanel">
+      <svg class="globe-svg" id="globe"></svg>
+
+      <div class="map-controls">
+        <button class="map-ctl-btn" id="zoomIn" title="Zoom in">+</button>
+        <button class="map-ctl-btn" id="zoomOut" title="Zoom out">−</button>
+        <button class="map-ctl-btn" id="resetView" title="Reset view">⌂</button>
+      </div>
+
+      <div class="map-legend">
+        <div class="lg-title">Magnitude</div>
+        <div class="lg-row"><span class="lg-dot" style="background:#5c6478"></span>M2.5–3.9</div>
+        <div class="lg-row"><span class="lg-dot" style="background:#3fd8c4"></span>M4.0–4.9</div>
+        <div class="lg-row"><span class="lg-dot" style="background:#ffb238"></span>M5.0–5.9</div>
+        <div class="lg-row"><span class="lg-dot" style="background:#ff5468"></span>M6.0+</div>
+      </div>
+
+      <div class="map-hint">◐ drag to rotate · scroll to zoom · click a quake to focus</div>
+    </section>
+
+    <!-- ---------- SIDEBAR ---------- -->
+    <aside class="sidebar">
+
+      <div class="sb-section">
+        <div class="sb-title">Snapshot <span id="snapshotWindow">— Past Day</span></div>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="num amber" id="statCount">–</div>
+            <div class="lbl">Events</div>
+          </div>
+          <div class="stat-box">
+            <div class="num" id="statMax">–</div>
+            <div class="lbl">Strongest</div>
+            <div class="sub" id="statMaxPlace">&nbsp;</div>
+          </div>
+          <div class="stat-box">
+            <div class="num" id="statDepth">–</div>
+            <div class="lbl">Avg Depth</div>
+          </div>
+          <div class="stat-box">
+            <div class="num red" id="statMajor">–</div>
+            <div class="lbl">M5.0+</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-title">Feed</div>
+        <div class="feed-chips">
+          <button class="chip" data-feed="hour">Past Hour</button>
+          <button class="chip active" data-feed="day">Past Day</button>
+          <button class="chip" data-feed="major">M4.5+ Day</button>
+        </div>
+        <div class="mag-filter">
+          <div class="mag-filter-row"><span>Min magnitude</span><b id="magFilterVal">2.5</b></div>
+          <input type="range" id="magFilter" min="2.5" max="7" step="0.1" value="2.5" />
+        </div>
+      </div>
+
+      <div class="sb-section sb-list-section">
+        <div class="sb-title">Recent Events <span id="listCount"></span></div>
+        <div class="quake-list" id="quakeList">
+          <div class="empty-note">Loading live feed…</div>
+        </div>
+      </div>
+
+    </aside>
+  </div>
+
+  <!-- ===================== TICKER ===================== -->
+  <footer class="ticker">
+    <div class="ticker-label">Seismograph · composite signal</div>
+    <div class="ticker-readout">Last sync <b id="syncAgo">–</b></div>
+    <canvas id="tickerCanvas"></canvas>
+  </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+name: Sync earthquake data
+
+# Pulls the three USGS feeds on a schedule and commits them into /data.
+# This gives the dashboard a same-origin fallback if a visitor's browser
+# can't reach earthquake.usgs.gov directly, and doubles as a lightweight
+# historical snapshot log.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # every 10 minutes
+  workflow_dispatch: {}       # allow manual runs from the Actions tab
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-data
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Fetch USGS feeds
+        run: |
+          set -euo pipefail
+          mkdir -p data
+          curl -fsSL --retry 3 --retry-delay 2 \
+            "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_hour.geojson" \
+            -o data/hour.json
+          curl -fsSL --retry 3 --retry-delay 2 \
+            "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson" \
+            -o data/day.json
+          curl -fsSL --retry 3 --retry-delay 2 \
+            "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson" \
+            -o data/major.json
+
+      - name: Validate JSON
+        run: |
+          for f in data/hour.json data/day.json data/major.json; do
+            python3 -c "import json,sys; json.load(open('$f'))" || { echo "Invalid JSON: $f"; exit 1; }
+          done
+
+      - name: Commit if changed
+        run: |
+          git config user.name "eq-watch-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/hour.json data/day.json data/major.json
+          if git diff --cached --quiet; then
+            echo "No changes in feed data."
+            exit 0
+          fi
+          git commit -m "chore: sync USGS feeds $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push
+        # Note: intentionally NOT using [skip ci] here — this push is what
+        # triggers deploy.yml to republish the site with the fresh data.

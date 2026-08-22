@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  eq-stream:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    shm_size: "1gb"
+    environment:
+      YOUTUBE_STREAM_KEY: ${YOUTUBE_STREAM_KEY}
+      AUDIO_URL: ${AUDIO_URL:-}
+      STREAM_WIDTH: ${STREAM_WIDTH:-1280}
+      STREAM_HEIGHT: ${STREAM_HEIGHT:-720}
+      STREAM_FPS: ${STREAM_FPS:-24}
+    restart: unless-stopped
