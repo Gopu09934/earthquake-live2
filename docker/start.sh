@@ -103,30 +103,32 @@ while [ "$attempt" -le "$MAX_RETRIES" ]; do
     echo "Starting ffmpeg capture (attempt ${attempt}/${MAX_RETRIES})..."
     echo "----------------------------------------"
 
-    set +e
     ffmpeg \
-        -hide_banner \
-        -loglevel warning \
-        -stats \
-        -nostdin \
-        -f x11grab -video_size "${WIDTH}x${HEIGHT}" -framerate "${FPS}" -i "${DISPLAY}.0" \
-        "${AUDIO_INPUT_ARGS[@]}" \
-        -c:v libx264 \
-        -preset veryfast \
-        -tune zerolatency \
-        -pix_fmt yuv420p \
-        -b:v 3000k \
-        -maxrate 3000k \
-        -bufsize 6000k \
-        -g $((FPS * 2)) \
-        -keyint_min $((FPS * 2)) \
-        -sc_threshold 0 \
-        -c:a aac \
-        -b:a 128k \
-        -ar 44100 \
-        -ac 2 \
-        -map 0:v \
-        -map "${AUDIO_MAP}" \
+    -hide_banner \
+    -loglevel warning \
+    -stats \
+    -nostdin \
+    -f x11grab \
+    -video_size "${WIDTH}x${HEIGHT}" \
+    -framerate "${FPS}" \
+    -i "${DISPLAY}.0" \
+    "${AUDIO_INPUT_ARGS[@]}" \
+    -c:v libx264 \
+    -preset ultrafast \
+    -tune zerolatency \
+    -pix_fmt yuv420p \
+    -b:v 2500k \
+    -maxrate 2800k \
+    -bufsize 5600k \
+    -g $((FPS * 2)) \
+    -keyint_min $((FPS * 2)) \
+    -sc_threshold 0 \
+    -c:a aac \
+    -b:a 128k \
+    -ar 44100 \
+    -ac 2 \
+    -map 0:v \
+    -map "${AUDIO_MAP}" \
         -f flv \
         "rtmp://a.rtmp.youtube.com/live2/${YOUTUBE_STREAM_KEY}"
     exit_code=$?
