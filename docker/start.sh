@@ -58,8 +58,21 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 #############################################
-# 4. Optional looping background audio (same convention as the video
-#    stream project — comma-separated URLs, looped via ffmpeg concat)
+# 4. Optional looping background audio
+#
+#    IMPORTANT: we do NOT use "-stream_loop -1" directly on a
+#    "-f concat" playlist. When ffmpeg loops back to the start of a
+#    concat pseudo-input it has to re-open/re-parse the playlist file,
+#    and that reopen can fail in sandboxed environments (seen in
+#    practice as "/tmp/audio_playlist.txt: Operation not permitted"),
+#    silently killing the audio track mid-stream while video keeps
+#    going.
+#
+#    Fix: pre-fetch + merge all AUDIO_URL sources ONCE into a single
+#    local file via the concat demuxer (no looping involved in that
+#    step), then loop THAT single file with -stream_loop -1. Looping
+#    one concrete local file only requires an in-file seek back to
+#    byte 0 — no reopen, no permission issue.
 #############################################
 AUDIO_INPUT_ARGS=(-f lavfi -i "anullsrc=r=44100:cl=stereo")
 AUDIO_MAP="1:a"
@@ -79,8 +92,20 @@ if [ -n "${AUDIO_URL:-}" ]; then
     } > "$PLAYLIST"
 
     if [ -s "$PLAYLIST" ] && grep -q "^file " "$PLAYLIST"; then
-        echo "Background audio enabled from AUDIO_URL."
-        AUDIO_INPUT_ARGS=(-stream_loop -1 -protocol_whitelist file,http,https,tcp,tls,crypto -f concat -safe 0 -i "$PLAYLIST")
+        echo "Pre-fetching and merging background audio sources..."
+        MERGED_AUDIO="/tmp/audio_merged.m4a"
+
+        if ffmpeg -hide_banner -loglevel error -y \
+            -protocol_whitelist file,http,https,tcp,tls,crypto \
+            -f concat -safe 0 -i "$PLAYLIST" \
+            -c:a aac -b:a 128k -ar 44100 -ac 2 \
+            "$MERGED_AUDIO"; then
+            echo "Background audio merged and cached locally at ${MERGED_AUDIO}."
+            AUDIO_INPUT_ARGS=(-stream_loop -1 -i "$MERGED_AUDIO")
+        else
+            echo "WARNING: failed to merge AUDIO_URL sources — streaming silent audio."
+            AUDIO_INPUT_ARGS=(-f lavfi -i "anullsrc=r=44100:cl=stereo")
+        fi
     else
         echo "NOTICE: AUDIO_URL set but produced no valid entries — streaming silent audio."
     fi
@@ -103,6 +128,7 @@ while [ "$attempt" -le "$MAX_RETRIES" ]; do
     echo "Starting ffmpeg capture (attempt ${attempt}/${MAX_RETRIES})..."
     echo "----------------------------------------"
 
+    set +e
     ffmpeg \
     -hide_banner \
     -loglevel warning \
