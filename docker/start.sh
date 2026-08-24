@@ -114,7 +114,7 @@ while [ "$attempt" -le "$MAX_RETRIES" ]; do
     -i "${DISPLAY}.0" \
     "${AUDIO_INPUT_ARGS[@]}" \
     -c:v libx264 \
-    -preset ultrafast \
+    -preset veryfast \
     -tune zerolatency \
     -pix_fmt yuv420p \
     -b:v 2500k \
